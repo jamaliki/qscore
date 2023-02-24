@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 from qscore.mrc_utils import MRCObject, load_mrc
 from qscore.pdb_utils import get_protein_from_file_path, index_to_restype_3, protein_to_cif
-from utils import get_reference_gaussian_params, get_radial_points, interpolate_grid_at_points
+from qscore.utils import get_reference_gaussian_params, get_radial_points, interpolate_grid_at_points
 
 
 def calculate_q_score(
