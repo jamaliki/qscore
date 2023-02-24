@@ -36,7 +36,7 @@ def get_radial_points(atoms: np.ndarray, sphere_radius: float, num_points: int) 
         ).reshape((num_atoms_left, num_points, 3))
         sphere_points += atoms[atoms_left, None]
         # Check if each sphere point is closest to the atom it originates from
-        indices = kdtree.query(sphere_points, k=1)[1]
+        indices = kdtree.query(sphere_points, k=1, workers=4)[1]
         indices_that_match = indices == np.arange(len(atoms))[atoms_left, None] # A x N
         if num_try > 3:
             sort_idx_pe = np.argsort(~point_exists[atoms_left], axis=1)  # True values first
