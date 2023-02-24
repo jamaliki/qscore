@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 from scipy.interpolate import interpn
 
-from mrc_utils import MRCObject
+from qscore.mrc_utils import MRCObject
 
 
 def sample_uniformly_on_sphere(sphere_radius: float, num_points: int) -> np.ndarray:
