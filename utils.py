@@ -29,23 +29,25 @@ def get_radial_points(atoms: np.ndarray, sphere_radius: float, num_points: int) 
     point_exists = np.zeros((len(atoms), num_points), dtype=bool)
     kdtree = cKDTree(atoms)
     for num_try in range(100):
+        atoms_left = ~np.all(point_exists, axis=-1)
+        num_atoms_left = np.sum(atoms_left)
         sphere_points = sample_uniformly_on_sphere(
-            sphere_radius, num_points * len(atoms)
-        ).reshape((len(atoms), num_points, 3))
-        sphere_points += atoms[:, None]
+            sphere_radius, num_points * num_atoms_left
+        ).reshape((num_atoms_left, num_points, 3))
+        sphere_points += atoms[atoms_left, None]
         # Check if each sphere point is closest to the atom it originates from
         indices = kdtree.query(sphere_points, k=1)[1]
-        indices_that_match = indices == np.arange(len(atoms))[:, None] # A x N
+        indices_that_match = indices == np.arange(len(atoms))[atoms_left, None] # A x N
         if num_try > 3:
-            sort_idx_pe = np.argsort(~point_exists, axis=1)  # True values first
-            point_exists = np.take_along_axis(point_exists, sort_idx_pe, axis=1)
-            radial_points = np.take_along_axis(radial_points, sort_idx_pe[..., None], axis=1)
+            sort_idx_pe = np.argsort(~point_exists[atoms_left], axis=1)  # True values first
+            point_exists[atoms_left] = np.take_along_axis(point_exists[atoms_left], sort_idx_pe, axis=1)
+            radial_points[atoms_left] = np.take_along_axis(radial_points[atoms_left], sort_idx_pe[..., None], axis=1)
             sort_idx_sp = np.argsort(indices_that_match, axis=1)  # False values first
             indices_that_match = np.take_along_axis(indices_that_match, sort_idx_sp, axis=1)
             sphere_points = np.take_along_axis(sphere_points, sort_idx_sp[..., None], axis=1)
-        idxs_to_update = np.nonzero(indices_that_match & ~point_exists)  # Not exactly optimal, probably should sort first
-        radial_points[idxs_to_update[0], idxs_to_update[1]] = sphere_points[idxs_to_update[0], idxs_to_update[1]]
-        point_exists[idxs_to_update[0], idxs_to_update[1]] = True
+        idxs_to_update = np.nonzero(indices_that_match & ~point_exists[atoms_left])  # Not exactly optimal, probably should sort first
+        radial_points[np.nonzero(atoms_left)[0][idxs_to_update[0]], idxs_to_update[1]] = sphere_points[idxs_to_update[0], idxs_to_update[1]]
+        point_exists[np.nonzero(atoms_left)[0][idxs_to_update[0]], idxs_to_update[1]] = True
         if np.all(point_exists):
             break
     return radial_points, point_exists
