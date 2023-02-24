@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 
 from mrc_utils import MRCObject, load_mrc
-from pdb_utils import get_protein_from_file_path, index_to_restype_3
+from pdb_utils import get_protein_from_file_path, index_to_restype_3, protein_to_cif
 from utils import get_reference_gaussian_params, get_radial_points, interpolate_grid_at_points
 
 
@@ -47,7 +47,10 @@ def calculate_per_residue_q_scores(
     q_score_per_residue = np.zeros_like(prot.atom_mask, dtype=np.float32)
     q_score_per_residue[prot.atom_mask.astype(bool)] = q_scores
     q_score_per_residue = q_score_per_residue.sum(axis=1) / prot.atom_mask.sum(axis=1)
-
+    avg_q_score = np.mean(q_scores)
+    min_q_score = np.min(q_scores)
+    max_q_score = np.max(q_scores)
+    print(f"Mean: {avg_q_score}, Min: {min_q_score}, Max: {max_q_score}")
     with open(output_path, "w") as f:
         for resid in range(len(prot.aatype)):
             f.write(
@@ -56,3 +59,6 @@ def calculate_per_residue_q_scores(
                 f"{index_to_restype_3[prot.aatype[resid]]},"
                 f"{q_score_per_residue[resid]:.6f}\n"
             )
+
+    prot.b_factors = q_score_per_residue * 100
+    protein_to_cif(prot, f"{output_path}.cif")

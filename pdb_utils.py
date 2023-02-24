@@ -2,9 +2,8 @@ import dataclasses
 from typing import List
 
 import numpy as np
-from Bio.PDB import PDBParser, MMCIFParser
-
-
+from Bio.PDB import PDBParser, MMCIFParser, MMCIFIO
+from Bio.PDB.StructureBuilder import StructureBuilder
 
 index_to_restype_3 = [
     "ALA",
@@ -441,6 +440,14 @@ atom_order = {atom_type: i for i, atom_type in enumerate(atom_types)}
 atom_type_num = len(atom_types)  # := 65.
 num_atoms = atom_type_num
 num_atomc = max([len(c) for c in restype3_to_atoms_index.values()])
+restype_name_to_atomc_names = {}
+for k in restype3_to_atoms:
+    res_num_atoms = len(restype3_to_atoms)
+    atom_names = restype3_to_atoms[k]
+    if len(atom_names) < num_atomc:
+        atom_names += [""] * (num_atomc - len(atom_names))
+    restype_name_to_atomc_names[k] = atom_names
+
 
 @dataclasses.dataclass(frozen=False)
 class Protein:
@@ -588,3 +595,53 @@ def get_protein_from_file_path(file_path: str, chain_id: str = None) -> Protein:
         chain_idx_to_residues=chain_idx_to_residues,
         prot_mask=aatype < num_prot,
     )
+
+def protein_to_cif(
+    protein: Protein, path_to_save: str,
+):
+    if protein.b_factors is None:
+        bfactors = np.zeros(len(protein.aatype))
+    else:
+        bfactors = protein.b_factors
+    if len(bfactors.shape) > 1:
+        bfactors = bfactors[:, 0]
+    struct = StructureBuilder()
+    curr_chain = 0
+
+    struct.init_structure("1")
+    struct.init_seg("1")
+    struct.init_model("1")
+    struct.init_chain(protein.chain_id[0])
+
+    prev_chain = protein.chain_index[0]
+    for i in range(protein.aatype.shape[0]):
+        res_name_3 = index_to_restype_3[protein.aatype[i]]
+        bfactor = bfactors[i]
+        atom_names = restype_name_to_atomc_names[res_name_3]
+        res_counter = 0
+        if prev_chain != protein.chain_index[i]:
+            curr_chain += 1
+            struct.init_chain(protein.chain_id[protein.chain_index[i]])
+        prev_chain = protein.chain_index[i]
+
+        struct.init_residue(res_name_3, " ", i, " ")
+        for atom_name, pos, mask in zip(
+            atom_names, protein.atomc_positions[i], protein.atomc_mask[i]
+        ):
+            if mask < 0.5:
+                continue
+            struct.set_line_counter(i + res_counter)
+            struct.init_atom(
+                name=atom_name,
+                coord=pos,
+                b_factor=bfactor,
+                occupancy=1,
+                altloc=" ",
+                fullname=atom_name,
+                element=atom_name[0],
+            )
+            res_counter += 1
+    struct = struct.get_structure()
+    io = MMCIFIO()
+    io.set_structure(struct)
+    io.save(path_to_save)
