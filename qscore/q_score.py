@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 from tqdm import tqdm
 
@@ -51,7 +53,8 @@ def calculate_per_residue_q_scores(
     min_q_score = np.min(q_scores)
     max_q_score = np.max(q_scores)
     print(f"Mean: {avg_q_score}, Min: {min_q_score}, Max: {max_q_score}")
-    with open(output_path, "w") as f:
+    base_path = os.path.splitext(output_path)[0]
+    with open(f"{base_path}.csv", "w") as f:
         for resid in range(len(prot.aatype)):
             f.write(
                 f"{prot.chain_id[prot.chain_index[resid]]},"
@@ -61,4 +64,4 @@ def calculate_per_residue_q_scores(
             )
 
     prot.b_factors = q_score_per_residue * 100
-    protein_to_cif(prot, f"{output_path}.cif")
+    protein_to_cif(prot, f"{base_path}.cif")
