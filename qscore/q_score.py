@@ -13,6 +13,7 @@ def calculate_q_score(
         map: MRCObject,
         ref_gaussian_width: float = 0.6,
         num_points: int = 8,
+        epsilon: float = 1e-6,
 ) -> np.ndarray:
     num_atoms = len(atoms)
     ref_gaussian_height, ref_gaussian_offset = get_reference_gaussian_params(map)
@@ -32,7 +33,7 @@ def calculate_q_score(
     v_norm = v_vector - np.mean(v_vector, axis=1, keepdims=True)
     u_norm = u_vector - np.mean(u_vector, axis=1, keepdims=True)
     Q = np.sum(u_norm * v_norm, axis=-1) / np.sqrt(
-            np.sum(u_norm * u_norm, axis=-1) * np.sum(v_norm * v_norm, axis=-1)
+            np.sum(u_norm * u_norm, axis=-1) * np.sum(v_norm * v_norm, axis=-1) + epsilon
     )
     return Q
 
