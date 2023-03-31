@@ -535,11 +535,6 @@ def get_protein_from_file_path(file_path: str, chain_id: str = None) -> Protein:
         for res in chain:
             if res.resname not in restype_3_to_index:
                 continue
-            if res.id[2] != " ":
-                raise ValueError(
-                    f"PDB contains an insertion code at chain {chain.id} and residue "
-                    f"index {res.id[1]}, {res.id[2]}. These are not supported."
-                )
             res_shortname = restype_3to1[res.resname]
             restype_idx = restype_order.get(res_shortname, restype_num)
 
