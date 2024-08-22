@@ -44,7 +44,7 @@ def calculate_per_residue_q_scores(
         output_path: str,
 ):
     prot = get_protein_from_file_path(structure_path)
-    map = load_mrc(map_path)
+    map = load_mrc(map_path, False)
     atoms = prot.atom_positions[prot.atom_mask.astype(bool)]
     q_scores = calculate_q_score(atoms, map)
     q_score_per_residue = np.zeros_like(prot.atom_mask, dtype=np.float32)
