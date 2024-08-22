@@ -58,5 +58,7 @@ def interpolate_grid_at_points(points: np.ndarray, map: MRCObject) -> np.ndarray
     y = np.arange(map.grid.shape[1])
     z = np.arange(map.grid.shape[2])
     points = np.flip(points, axis=-1)
-    p = (points - map.global_origin[None]) / map.voxel_size
+    # Origin should be flipped the same way, thank you Sjors
+    flipped_origin = np.flip(map.global_origin, axis=-1)
+    p = (points - flipped_origin[None]) / map.voxel_size
     return interpn((x, y, z), map.grid, p)
